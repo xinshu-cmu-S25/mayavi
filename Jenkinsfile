@@ -21,7 +21,7 @@ pipeline {
                         sh "${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=mayavi \
                             -Dsonar.sources=. \
-                            -Dsonar.host.url=http://sonarqube-service:9000"
+                            -Dsonar.host.url=http://136.117.154.143:9000"
                     }
                 }
             }
