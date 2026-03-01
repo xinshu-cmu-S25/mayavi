@@ -5,6 +5,10 @@ pipeline {
     'hudson.plugins.sonar.SonarRunnerInstallation' 'sonar-scanner'
   }
 
+  environment {
+    SONAR_HOST_URL = 'http://sonarqube-service.default.svc.cluster.local:9000'
+  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -18,8 +22,7 @@ pipeline {
       steps {
         sh '''
           for i in $(seq 1 60); do
-            resp=$(curl -s http://sonarqube-service.default.svc.cluster.local:9000/api/system/status || true)
-            echo "$resp"
+            resp=$(curl -s ${SONAR_HOST_URL}/api/system/status || true)
             echo "$resp" | grep -q '"status":"UP"' && exit 0
             sleep 3
           done
@@ -35,21 +38,18 @@ pipeline {
           def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
 
           withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            withSonarQubeEnv('sonar-server') {
-              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh '''
-                  echo "Check token against SonarQube v2 endpoint:"
-                  curl -s -o /dev/null -w "HTTP %{http_code}\n" -u "$SONAR_TOKEN:" \
-                    http://sonarqube-service.default.svc.cluster.local:9000/api/v2/analysis/version || true
+            sh '''
+              set -euo pipefail
+              echo "Sanity check SonarQube auth..."
+              curl -s -o /dev/null -w "HTTP %{http_code}\n" -u "${SONAR_TOKEN}:" ${SONAR_HOST_URL}/api/v2/analysis/version
 
-                  sonar-scanner \
-                    -Dsonar.projectKey=mayavi \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=http://sonarqube-service.default.svc.cluster.local:9000 \
-                    -Dsonar.token=$SONAR_TOKEN
-                '''
-              }
-            }
+              echo "Running sonar-scanner..."
+              '"${scannerHome}"'/bin/sonar-scanner \
+                -Dsonar.projectKey=mayavi \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=${SONAR_HOST_URL} \
+                -Dsonar.token=${SONAR_TOKEN}
+            '''
           }
         }
       }
