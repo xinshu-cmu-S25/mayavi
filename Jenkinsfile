@@ -18,7 +18,10 @@ pipeline {
                     def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                     
                     withSonarQubeEnv('sonar-server') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=mayavi -Dsonar.sources=."
+                        sh "${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=mayavi \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://sonarqube-service:9000"
                     }
                 }
             }
