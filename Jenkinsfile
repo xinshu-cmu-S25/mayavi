@@ -23,6 +23,7 @@ pipeline {
         sh '''
           for i in $(seq 1 60); do
             resp=$(curl -s ${SONAR_HOST_URL}/api/system/status || true)
+            echo "$resp"
             echo "$resp" | grep -q '"status":"UP"' && exit 0
             sleep 3
           done
@@ -38,18 +39,23 @@ pipeline {
           def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
 
           withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            sh '''
-              set -euo pipefail
-              echo "Sanity check SonarQube auth..."
-              curl -s -o /dev/null -w "HTTP %{http_code}\n" -u "${SONAR_TOKEN}:" ${SONAR_HOST_URL}/api/v2/analysis/version
+            withEnv(["SCANNER_HOME=${scannerHome}"]) {
+              sh '''
+                set -eu
 
-              echo "Running sonar-scanner..."
-              '"${scannerHome}"'/bin/sonar-scanner \
-                -Dsonar.projectKey=mayavi \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=${SONAR_HOST_URL} \
-                -Dsonar.token=${SONAR_TOKEN}
-            '''
+                echo "Sanity check SonarQube auth..."
+                curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+                  -u "${SONAR_TOKEN}:" \
+                  ${SONAR_HOST_URL}/api/v2/analysis/version
+
+                echo "Running sonar-scanner from $SCANNER_HOME ..."
+                "$SCANNER_HOME/bin/sonar-scanner" \
+                  -Dsonar.projectKey=mayavi \
+                  -Dsonar.sources=. \
+                  -Dsonar.host.url=${SONAR_HOST_URL} \
+                  -Dsonar.token=${SONAR_TOKEN}
+              '''
+            }
           }
         }
       }
