@@ -8,7 +8,7 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('mayavi-analysis') {
+                withSonarQubeEnv('sonar-server') {
                     sh 'mvn sonar:sonar' 
                 }
             }
