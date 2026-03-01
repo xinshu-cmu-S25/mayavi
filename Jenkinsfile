@@ -14,8 +14,12 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh "sonar-scanner -Dsonar.projectKey=mayavi -Dsonar.sources=."
+                script {
+                    def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    
+                    withSonarQubeEnv('sonar-server') {
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=mayavi -Dsonar.sources=."
+                    }
                 }
             }
         }
