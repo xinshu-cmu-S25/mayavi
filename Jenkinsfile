@@ -33,16 +33,22 @@ pipeline {
       steps {
         script {
           def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-    
+
           withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
             withSonarQubeEnv('sonar-server') {
-              ssh """
-            ${scannerHome}/bin/sonar-scanner \
-              -Dsonar.projectKey=mayavi \
-              -Dsonar.sources=. \
-              -Dsonar.host.url=http://sonarqube-service.default.svc.cluster.local:9000 \
-              -Dsonar.token=$SONAR_TOKEN
-          """
+              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                sh '''
+                  echo "Check token against SonarQube v2 endpoint:"
+                  curl -s -o /dev/null -w "HTTP %{http_code}\n" -u "$SONAR_TOKEN:" \
+                    http://sonarqube-service.default.svc.cluster.local:9000/api/v2/analysis/version || true
+
+                  sonar-scanner \
+                    -Dsonar.projectKey=mayavi \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://sonarqube-service.default.svc.cluster.local:9000 \
+                    -Dsonar.token=$SONAR_TOKEN
+                '''
+              }
             }
           }
         }
