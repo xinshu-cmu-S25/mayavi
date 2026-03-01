@@ -36,13 +36,13 @@ pipeline {
     
           withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
             withSonarQubeEnv('sonar-server') {
-              sh """
+              sh '''
                 ${scannerHome}/bin/sonar-scanner \
                   -Dsonar.projectKey=mayavi \
                   -Dsonar.sources=. \
                   -Dsonar.host.url=http://sonarqube-service.default.svc.cluster.local:9000 \
                   -Dsonar.token=$SONAR_TOKEN
-              """
+              '''
             }
           }
         }
