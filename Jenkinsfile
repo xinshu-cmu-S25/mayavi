@@ -1,5 +1,10 @@
 pipeline {
     agent any
+    
+    tools {
+        sonarScanner 'sonar-scanner' 
+    }
+
     stages {
         stage('Checkout') {
             steps {
