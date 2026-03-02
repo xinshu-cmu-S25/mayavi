@@ -9,6 +9,7 @@ def main():
         line = line.rstrip("\n")
         if not line:
             continue
+
         try:
             key, value = line.split("\t", 1)
             value = int(value)
